@@ -1,6 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
+from logger import get_logger
+
+log = get_logger(__name__)
 
 HEADERS = {
     "User-Agent": (
@@ -61,10 +64,12 @@ def _extract(soup: BeautifulSoup, selector: str, attr: str | None = None) -> str
 
 def scrape_page(url: str, custom_selectors: dict | None = None, timeout: int = 20) -> dict:
     selectors = custom_selectors or _get_selectors(url)
+    log.info("Scraping: %s", url)
     try:
         resp = requests.get(url, headers=HEADERS, timeout=timeout)
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
+        log.info("Success: %s [%d]", url, resp.status_code)
         return {
             "url": url,
             "status": "ok",
@@ -73,6 +78,7 @@ def scrape_page(url: str, custom_selectors: dict | None = None, timeout: int = 2
             "image": _extract(soup, selectors.get("image", "img"), attr="src"),
         }
     except requests.RequestException as exc:
+        log.error("Failed: %s - %s", url, exc)
         return {"url": url, "status": "error", "error": str(exc)}
 
 
