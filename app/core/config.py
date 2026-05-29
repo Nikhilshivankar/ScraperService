@@ -8,10 +8,17 @@ class Config:
     DEBUG = False
     TESTING = False
     
+    # Database settings
+    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./scraper_service.db")
+    
     # Scraper settings
     REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "15"))
     MAX_RETRIES = int(os.getenv("MAX_RETRIES", "2"))
     RATE_LIMIT_DELAY = float(os.getenv("RATE_LIMIT_DELAY", "0.5"))
+    
+    # Pagination
+    DEFAULT_PAGE_SIZE = int(os.getenv("DEFAULT_PAGE_SIZE", "50"))
+    MAX_PAGE_SIZE = int(os.getenv("MAX_PAGE_SIZE", "100"))
     
     # Logging
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")

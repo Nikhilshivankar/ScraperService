@@ -318,6 +318,11 @@ export REQUEST_TIMEOUT=20
 
 MIT License
 
+## Documentation
+
+- **[ARCHITECTURE_FIXES.md](ARCHITECTURE_FIXES.md)** - Complete list of architecture improvements and fixes
+- **[SQLALCHEMY_BEST_PRACTICES.md](SQLALCHEMY_BEST_PRACTICES.md)** - SQLAlchemy optimization and best practices guide
+
 ## Contributing
 
 1. Fork the repository

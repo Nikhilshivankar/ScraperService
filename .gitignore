@@ -52,3 +52,16 @@ Thumbs.db
 *.log
 logs/*.log
 !logs/.gitkeep
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+!scraper_service.db
+
+# Temporary files
+*_old.py
+*_backup.py
+*_temp.py
+test_*.db
+server.log
