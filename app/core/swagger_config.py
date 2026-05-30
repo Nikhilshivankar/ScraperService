@@ -26,7 +26,6 @@ SWAGGER_TEMPLATE = {
             "email": "support@scraperservice.com"
         }
     },
-    "host": "localhost:5000",
     "basePath": "/api",
     "schemes": ["http", "https"],
     "consumes": ["application/json"],
@@ -39,10 +38,6 @@ SWAGGER_TEMPLATE = {
         {
             "name": "Scraping",
             "description": "Web scraping operations"
-        },
-        {
-            "name": "Sites",
-            "description": "Supported sites information"
         },
         {
             "name": "Jobs",

@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.models.clients import Clients
+    from app.models.db_dto.clients import Clients
 
 
 class Job_Data(Base):
@@ -23,4 +23,4 @@ class Job_Data(Base):
     changed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     done_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    
+

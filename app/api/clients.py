@@ -1,17 +1,12 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify
 from app.core.logger import setup_logger
-from app.core.exceptions import ValidationException
 from app.services.scraper_service import ScraperService
 from app.services.database_service import DatabaseService
 
-from app.routes.schemas import ScrapeRequest
-
 logger = setup_logger(__name__)
-api_bp = Blueprint('api', __name__)
+api_bp = Blueprint('clients_api', __name__)
 
-# Initialize scraper service
 database_service = DatabaseService()
-scraper_service = ScraperService()
 
 
 @api_bp.route('/clients', methods=['GET'])
@@ -36,6 +31,7 @@ def get_client_list():
             version:
               type: string
     """
+    logger.info('Received request to list clients')
     client_list = database_service.get_all_clients()
     return jsonify({
         'clients': client_list,
@@ -44,7 +40,7 @@ def get_client_list():
     }), 200
 
 
-@api_bp.route('/clients/<int:id>', methods=['GET'])
+@api_bp.route('/clients/<int:id>', methods=['POST'])
 def get_client(id):
     """
     Get client by ID
@@ -70,6 +66,7 @@ def get_client(id):
             version:
               type: string
     """
+    logger.info('Received request for client id=%s', id)
     client_list = database_service.get_client_by_id(id)
     return jsonify({
         'clients': client_list,

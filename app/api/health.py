@@ -1,6 +1,5 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify
 from app.core.logger import setup_logger
-from app.core.exceptions import ValidationException
 from app.services.scraper_service import ScraperService
 from app.services.database_service import DatabaseService
 
@@ -9,8 +8,8 @@ logger = setup_logger(__name__)
 api_bp = Blueprint('api', __name__)
 
 # Initialize scraper service
-database_service = DatabaseService()
-scraper_service = ScraperService()
+# database_service = DatabaseService()
+# scraper_service = ScraperService()
 
 
 @api_bp.route('/health', methods=['GET'])
@@ -36,6 +35,7 @@ def health_check():
               type: string
               example: 1.0.0
     """
+    logger.info('Received health check request')
     return jsonify({
         'status': 'healthy',
         'service': 'scraper-service',

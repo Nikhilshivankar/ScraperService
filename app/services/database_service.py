@@ -9,6 +9,8 @@ from datetime import datetime
 from app.models.db_dto.job import Job_Data
 from app.models.db_dto.clients import Clients
 from app.models.db_dto.product_urls import Product_Urls
+from app.models.db_dto.product_info import Product_Info
+from app.services.scraper_service import ScraperService
 
 logger = setup_logger(__name__)
 config = get_config()
@@ -30,7 +32,7 @@ class DatabaseService:
         with get_db_session() as session:
             total = session.query(Job_Data).count()
             jobs = session.query(Job_Data).offset(offset).limit(page_size).all()
-            
+             
             return {
                 'items': [
                     {
@@ -262,7 +264,121 @@ class DatabaseService:
                 'status': product_url.status
             }
             return result
-    
+
+    @staticmethod
+    def get_active_product_urls_for_client(client_id: int) -> List[Product_Urls]:
+        """Get the latest active product URLs for a client."""
+        with get_db_session() as session:
+            return session.query(Product_Urls).filter(
+                Product_Urls.client_id == client_id,
+                Product_Urls.status == True
+            ).order_by(Product_Urls.created_at.desc()).all()
+
+    @staticmethod
+    def upsert_product_info_for_client(
+        client_id: int,
+        scrape_results: List[Dict[str, Any]],
+        url_to_id: Dict[str, int]
+    ) -> int:
+        """Create or update product_info rows for scraped product URLs."""
+        updated_count = 0
+        with get_db_session() as session:
+            for result in scrape_results:
+                if result.get('status') != 'success':
+                    continue
+
+                product_url_id = url_to_id.get(result['url'])
+                if product_url_id is None:
+                    continue
+
+                product_info = session.query(Product_Info).filter(
+                    Product_Info.id == product_url_id
+                ).first()
+
+                if not product_info:
+                    product_info = Product_Info(
+                        id=product_url_id,
+                        client_id=client_id,
+                        name=result.get('name'),
+                        price=result.get('price'),
+                        image=result.get('image'),
+                        updated_at=datetime.utcnow()
+                    )
+                    session.add(product_info)
+                else:
+                    product_info.client_id = client_id
+                    product_info.name = result.get('name')
+                    product_info.price = result.get('price')
+                    product_info.image = result.get('image')
+                    product_info.updated_at = datetime.utcnow()
+
+                updated_count += 1
+
+        return updated_count
+
+    @staticmethod
+    def update_job_status(job_id: int, status: str) -> None:
+        """Update job status and completion timestamp."""
+        with get_db_session() as session:
+            job = session.query(Job_Data).filter(Job_Data.id == job_id).first()
+            if not job:
+                raise ValueError(f"Job with id {job_id} not found")
+
+            job.status = status
+            job.done_at = datetime.utcnow()
+            job.changed_at = datetime.utcnow()
+
+    @staticmethod
+    def create_scrape_job_for_client(client_id: int, submitted_by: str = 'system') -> Dict[str, Any]:
+        """Create a client scrape job and update product_info for the client's latest URLs."""
+        with get_db_session() as session:
+            client = session.query(Clients).filter(
+                Clients.id == client_id,
+                Clients.active == True
+            ).first()
+            if not client:
+                raise ValueError(f"Active client with id {client_id} not found")
+
+            job = Job_Data(
+                submitted_by=submitted_by,
+                status='New',
+                jobtype='Scraper',
+                client_name=client.name,
+                scrape_type='LatestProductUrls'
+            )
+            session.add(job)
+            session.flush()
+            job_id = job.id
+
+        product_urls = DatabaseService.get_active_product_urls_for_client(client_id)
+        if not product_urls:
+            DatabaseService.update_job_status(job_id, 'Failed')
+            return {
+                'job_id': job_id,
+                'client_id': client_id,
+                'client_name': client.name,
+                'updated': 0,
+                'message': 'No active product URLs found for this client',
+                'status': 'Failed'
+            }
+
+        url_to_id = {product.url: product.id for product in product_urls}
+        scraper = ScraperService()
+        scrape_results = [result.to_dict() for result in scraper.scrape_urls([product.url for product in product_urls])]
+        updated_count = DatabaseService.upsert_product_info_for_client(client_id, scrape_results, url_to_id)
+
+        status = 'Completed' if updated_count > 0 else 'CompletedWithErrors'
+        DatabaseService.update_job_status(job_id, status)
+
+        return {
+            'job_id': job_id,
+            'client_id': client_id,
+            'client_name': client.name,
+            'updated': updated_count,
+            'scrape_results': scrape_results,
+            'status': status
+        }
+
     @staticmethod
     def create_product_urls_bulk(urls: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Create multiple product URLs in a single transaction"""

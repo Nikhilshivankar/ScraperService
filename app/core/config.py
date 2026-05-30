@@ -9,7 +9,7 @@ class Config:
     TESTING = False
     
     # Database settings
-    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./scraper_service.db")
+    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test_db.db")
     
     # Scraper settings
     REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "15"))
